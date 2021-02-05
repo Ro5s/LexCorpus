@@ -25,7 +25,6 @@ contract ReentrancyGuard { // call wrapper for reentrancy check - see https://gi
 
 contract Baal is ReentrancyGuard {
     address[] public memberList; // array of member accounts summoned or added by proposal
-    address[] public contactList; // array of contacts
     uint256 public proposalCount; // counter for proposals submitted 
     uint256 public totalSupply; // counter for member votes minted - erc20 compatible
     uint256 public minVotingPeriod; // min period proposal voting in epoch time
@@ -36,7 +35,6 @@ contract Baal is ReentrancyGuard {
     
     mapping(address => uint256) public balanceOf; // mapping member accounts to votes
     mapping(address => bool) public contractList; // mapping contract approved for member calls 
-    mapping(address => bool) public contacts; // mapping of approved addresses for proposals
     mapping(address => mapping(uint256 => bool)) public voted; // mapping proposal number to whether member voted 
     mapping(uint256 => Proposal) public proposals; // mapping proposal number to struct details
     
@@ -120,7 +118,7 @@ contract Baal is ReentrancyGuard {
     /// @dev Process proposal and execute low-level call or membership management - proposal must exist, be unprocessed, and voting period must be finished
     /// @param proposal Number of proposal in `proposals` mapping to process for execution
     function processProposal(uint256 proposal) external nonReentrant returns (bool success, bytes memory retData) {
-        require(processingReady(proposal), "Baal:: !ready for processing");
+        require(processingReady(proposal), "Baal:: !ready for processing"); // wip - test
         require(proposals[proposal].membership == 0, "Baal:: membership proposal");
       
         bool _didPass = didPass(proposal);
@@ -185,11 +183,7 @@ contract Baal is ReentrancyGuard {
         bool _didPass = didPass(proposal);
 
         if (_didPass) {
-            
-            address target = proposals[proposal].target;
-            contacts[target] = true;
-            contactList.push(target);
-            
+            contractList[proposals[proposal].target] = true;
             return(true);
         }
         
@@ -237,7 +231,7 @@ contract Baal is ReentrancyGuard {
         } else if(proposals[proposal].yesVotes > halfShares ) { // early execution b/c of 50%+
             return true;
         } else {
-            return false; //not ready
+            return false; // not ready
         }
     }
     
@@ -246,7 +240,7 @@ contract Baal is ReentrancyGuard {
         return memberList;
     }
     
-        /// @dev Return array list of member accounts in Baal
+    /// @dev Return array list of member accounts in Baal
     function getContacts() external view returns (address[] memory allContacts) {
         return contactList;
     }
